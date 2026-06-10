@@ -2267,11 +2267,10 @@ function _fbSetupSave() {
 
     let cfg;
     try {
-        // Remove linhas de import e comentários, depois executa o JS normalmente
-        const cleaned = raw
-            .replace(/^\s*import\s+[^;]+;\s*$/gm, '')
-            .replace(/\/\/.*$/gm, '');
-        cfg = new Function(cleaned + '\nreturn firebaseConfig;')();
+        // Extrai só o objeto literal { ... } do firebaseConfig
+        const objMatch = raw.match(/firebaseConfig\s*=\s*(\{[\s\S]*?\})\s*;/);
+        if (!objMatch) throw new Error('objeto não encontrado');
+        cfg = new Function('return ' + objMatch[1])();
     } catch(e) {
         errEl.textContent = 'Formato inválido. Copie exatamente o bloco firebaseConfig do Firebase.';
         return;
