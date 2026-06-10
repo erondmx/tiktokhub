@@ -2265,22 +2265,18 @@ function _fbSetupSave() {
     errEl.textContent = '';
     if (!raw) { errEl.textContent = 'Cole o firebaseConfig antes de continuar.'; return; }
 
-    // Aceita tanto o objeto JS quanto só o JSON
-    let jsonStr = raw;
-    // Extrai o objeto entre { } caso venha com "const firebaseConfig = {...};"
-    const match = raw.match(/\{[\s\S]*\}/);
-    if (match) jsonStr = match[0];
-    // Converte chaves sem aspas para JSON válido
-    jsonStr = jsonStr.replace(/(['"])?([a-zA-Z_][a-zA-Z0-9_]*)(['"])?\s*:/g, '"$2":');
-    // Remove vírgulas trailing
-    jsonStr = jsonStr.replace(/,\s*([}\]])/g, '$1');
-
     let cfg;
-    try { cfg = JSON.parse(jsonStr); } catch(e) {
+    try {
+        // Remove linhas de import e comentários, depois executa o JS normalmente
+        const cleaned = raw
+            .replace(/^\s*import\s+[^;]+;\s*$/gm, '')
+            .replace(/\/\/.*$/gm, '');
+        cfg = new Function(cleaned + '\nreturn firebaseConfig;')();
+    } catch(e) {
         errEl.textContent = 'Formato inválido. Copie exatamente o bloco firebaseConfig do Firebase.';
         return;
     }
-    if (!cfg.apiKey || !cfg.databaseURL) {
+    if (!cfg || !cfg.apiKey || !cfg.databaseURL) {
         errEl.textContent = 'Config incompleto. Certifique-se de incluir apiKey e databaseURL.';
         return;
     }
@@ -2288,7 +2284,6 @@ function _fbSetupSave() {
     localStorage.setItem('fbConfig', JSON.stringify(cfg));
     localStorage.removeItem('fbSkipped');
     document.getElementById('fb-setup-overlay').style.display = 'none';
-    // Recarrega para inicializar Firebase com o novo config
     location.reload();
 }
 
