@@ -1539,6 +1539,35 @@
         .cal-resetver-badge.hist   { background: rgba(155,89,182,.25); color: #ce93d8; }
         .cal-resetver-badge.freed  { background: rgba(46,204,113,.2);  color: #2ecc71; }
         .cal-resetver-badge.avail  { background: rgba(255,255,255,.08); color: var(--text-muted); }
+
+        /* ── EDITAR FORMATOS / VERSÕES ── */
+        .cal-fmtedit-fmt-title {
+            font-size: 11px; font-weight: 700; text-transform: uppercase;
+            letter-spacing: .06em; color: #7b80a0; padding: 10px 0 4px;
+        }
+        .cal-fmtedit-ver-row {
+            display: flex; align-items: center; gap: 10px;
+            padding: 7px 10px; border-radius: 7px; cursor: pointer;
+            transition: background .15s;
+        }
+        .cal-fmtedit-ver-row:hover { background: rgba(255,255,255,.07); }
+        .cal-fmtedit-ver-row input[type=checkbox] { width:15px; height:15px; accent-color:#e67e22; flex-shrink:0; cursor:pointer; }
+        .cal-fmtedit-ver-label { flex:1; font-size:13px; color: var(--text); font-weight:600; }
+        .cal-fmtedit-badge {
+            font-size: 10px; font-weight: 700; border-radius: 4px;
+            padding: 2px 7px; text-transform: uppercase; letter-spacing: .04em;
+        }
+        .cal-fmtedit-badge.sched  { background: rgba(230,126,34,.2); color: #e67e22; }
+        .cal-fmtedit-badge.hist   { background: rgba(155,89,182,.25); color: #ce93d8; }
+        .cal-fmtedit-badge.manual { background: rgba(52,152,219,.2); color: #64b5f6; }
+        .cal-fmtedit-badge.free   { background: rgba(255,255,255,.06); color: #7b80a0; }
+        .cal-fmtedit-list { max-height: 320px; overflow-y: auto; margin-bottom: 16px; }
+        .btn-fmtedit-open {
+            width: 100%; background: none; border: 1px dashed #3d5a6e;
+            color: #7b80a0; border-radius: 7px; padding: 9px;
+            font-size: 13px; font-weight: 600; cursor: pointer; margin-bottom: 18px;
+        }
+        .btn-fmtedit-open:hover { border-color: #3498db; color: #3498db; }
         .cal-prod-modal { max-width: 520px; }
         .cal-format-row {
             display: flex; gap: 8px; align-items: center; padding: 8px;
@@ -1937,10 +1966,23 @@
                         <span style="font-size:11px;color:#7b80a0">Nome · Abrev · Versões</span>
                     </div>
                     <div id="cal-formatsContainer" style="margin-bottom:10px;max-height:240px;overflow-y:auto"></div>
-                    <button class="cal-btn" style="width:100%;margin-bottom:18px" onclick="cal_addTempFormat()">+ Adicionar Formato</button>
+                    <button class="cal-btn" style="width:100%;margin-bottom:10px" onclick="cal_addTempFormat()">+ Adicionar Formato</button>
+                    <button class="btn-fmtedit-open" id="cal-btn-fmtedit" style="display:none" onclick="cal_openFmtEdit()">🔧 Editar uso das versões</button>
                     <div class="cal-modal-actions">
                         <button class="cal-btn" onclick="cal_closeProductForm()">Cancelar</button>
                         <button class="cal-btn cal-btn-primary" onclick="cal_saveProduct()">Salvar Produto</button>
+                    </div>
+                </div>
+
+                <!-- VIEW: EDITAR VERSÕES -->
+                <div id="cal-fmtEditView" style="display:none">
+                    <h2 id="cal-fmtedit-title">Versões do produto</h2>
+                    <p style="font-size:12px;color:#7b80a0;margin:6px 0 12px;line-height:1.5">
+                        ✅ Marcado = em uso (bloqueado) &nbsp;·&nbsp; ☐ Desmarcado = livre para agendar
+                    </p>
+                    <div class="cal-fmtedit-list" id="cal-fmtedit-list"></div>
+                    <div class="cal-modal-actions">
+                        <button class="cal-btn cal-btn-primary" onclick="cal_closeFmtEdit()">← Voltar</button>
                     </div>
                 </div>
             </div>
@@ -4299,11 +4341,92 @@ closeBackupGate();
         if(idx===-1){ $id('cal-fpName').value=''; tempFmts=[]; }
         else { const p=calData.products[idx]; $id('cal-fpName').value=p.name; tempFmts=(p.formats||[]).map(f=>({...f})); }
         _rFmts();
-        $id('cal-prodListView').style.display='none'; $id('cal-prodFormView').style.display='';
+        $id('cal-btn-fmtedit').style.display = idx===-1 ? 'none' : '';
+        $id('cal-prodListView').style.display='none';
+        $id('cal-prodFormView').style.display='';
+        $id('cal-fmtEditView').style.display='none';
         setTimeout(()=>$id('cal-fpName').focus(),30);
     }
     function _closeProductForm() {
-        $id('cal-prodFormView').style.display='none'; $id('cal-prodListView').style.display=''; _rProdList();
+        $id('cal-prodFormView').style.display='none';
+        $id('cal-fmtEditView').style.display='none';
+        $id('cal-prodListView').style.display=''; _rProdList();
+    }
+
+    // ── EDITAR VERSÕES MANUALMENTE ──
+    function _openFmtEdit() {
+        if(editProdIdx===-1) return;
+        const p=calData.products[editProdIdx];
+        $id('cal-fmtedit-title').textContent='Versões — '+p.name;
+        _rFmtEdit();
+        $id('cal-prodFormView').style.display='none';
+        $id('cal-fmtEditView').style.display='';
+    }
+    function _closeFmtEdit() {
+        $id('cal-fmtEditView').style.display='none';
+        $id('cal-prodFormView').style.display='';
+    }
+    function _rFmtEdit() {
+        if(editProdIdx===-1) return;
+        const p = calData.products[editProdIdx];
+        const name = p.name;
+        // Monta schedCount
+        const schedCount={};
+        Object.values(calData.schedule).forEach(arr=>arr.forEach(it=>{
+            if(it.product===name){ const k=`${it.format}|${it.version}`; schedCount[k]=(schedCount[k]||0)+1; }
+        }));
+        const freed   = ((calData.freedVersions||{})[name])||{};
+        const history = new Set((calData.usedHistory||{})[name]||[]);
+
+        let h='';
+        (p.formats||[]).forEach(f=>{
+            h+=`<div class="cal-fmtedit-fmt-title">${_e(f.name)} (${_e(f.abbr)})</div>`;
+            for(let v=1;v<=f.versions;v++){
+                const key=`${f.abbr}|${v}`;
+                const net=(schedCount[key]||0)-(freed[key]||0);
+                const inSched=net>0, inHist=history.has(key);
+                const inUse=inSched||inHist;
+                let badge='', badgeCls='free';
+                if(inSched&&inHist){ badge='calendário + hist.'; badgeCls='sched'; }
+                else if(inSched)   { badge='no calendário';      badgeCls='sched'; }
+                else if(inHist)    { badge='histórico';          badgeCls='hist'; }
+                else               { badge='livre';              badgeCls='free'; }
+                const chk=inUse?'checked':'';
+                h+=`<div class="cal-fmtedit-ver-row" onclick="this.querySelector('input').click()">
+                    <input type="checkbox" ${chk} onclick="event.stopPropagation();cal_toggleVersion('${_e(name)}','${key}',this.checked)">
+                    <span class="cal-fmtedit-ver-label">${_e(f.abbr)} ${v}</span>
+                    <span class="cal-fmtedit-badge ${badgeCls}">${badge}</span>
+                </div>`;
+            }
+        });
+        $id('cal-fmtedit-list').innerHTML=h;
+    }
+    function _toggleVersion(prodName, key, makeUsed) {
+        if(!calData.freedVersions) calData.freedVersions={};
+        if(!calData.freedVersions[prodName]) calData.freedVersions[prodName]={};
+        if(!calData.usedHistory) calData.usedHistory={};
+        if(!calData.usedHistory[prodName]) calData.usedHistory[prodName]=[];
+
+        const schedCount={};
+        Object.values(calData.schedule).forEach(arr=>arr.forEach(it=>{
+            if(it.product===prodName){ const k=`${it.format}|${it.version}`; schedCount[k]=(schedCount[k]||0)+1; }
+        }));
+
+        if(makeUsed){
+            // Bloquear: remove passes livres e adiciona ao histórico
+            delete calData.freedVersions[prodName][key];
+            if(!calData.usedHistory[prodName].includes(key))
+                calData.usedHistory[prodName].push(key);
+        } else {
+            // Liberar: remove do histórico e adiciona passes livres se estiver no calendário
+            calData.usedHistory[prodName]=calData.usedHistory[prodName].filter(k=>k!==key);
+            const inSched=schedCount[key]||0;
+            if(inSched>0) calData.freedVersions[prodName][key]=inSched;
+            else delete calData.freedVersions[prodName][key];
+        }
+        _calSave();
+        _rFmtEdit(); // re-renderiza pra refletir novo estado
+        _calToast(makeUsed?'Versão bloqueada.':'Versão liberada.');
     }
     function _rFmts() {
         const c=$id('cal-formatsContainer');
@@ -4433,6 +4556,9 @@ closeBackupGate();
     window.cal_closeProdModal     = _closeProdModal;
     window.cal_openProductForm    = _openProductForm;
     window.cal_closeProductForm   = _closeProductForm;
+    window.cal_openFmtEdit        = _openFmtEdit;
+    window.cal_closeFmtEdit       = _closeFmtEdit;
+    window.cal_toggleVersion      = _toggleVersion;
     window.cal_removeProduct         = _removeProduct;
     window.cal_resetProductHistory   = _resetProductHistory;
     window.cal_closeResetVer         = _closeResetVer;
