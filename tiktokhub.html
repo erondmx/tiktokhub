@@ -1012,6 +1012,7 @@
         }
         .min-status-badge.nao_validado { background: rgba(231,76,60,.12); color: #e74c3c; }
         .min-status-badge.testar       { background: rgba(243,156,18,.15); color: #e67e22; }
+        .min-status-badge.verificar    { background: rgba(52,152,219,.15); color: #3498db; }
         .min-status-badge.testado      { background: rgba(39,174,96,.13);  color: #27ae60; }
         .min-del-btn {
             background: none; border: 1px solid #e74c3c; color: #e74c3c;
@@ -5347,6 +5348,7 @@ function showVendas() {
                     <select class="min-select" onchange="minUpdate(${idx},'status',this.value)">
                         <option value="nao_validado" ${item.status==='nao_validado'?'selected':''}>Não validado</option>
                         <option value="testar"       ${item.status==='testar'      ?'selected':''}>Testar</option>
+                        <option value="verificar"    ${item.status==='verificar'   ?'selected':''}>Verificar</option>
                         <option value="testado"      ${item.status==='testado'     ?'selected':''}>Testado</option>
                     </select>
                     <button class="min-save-btn" onclick="minSave(${idx})">✓ Salvar</button>
