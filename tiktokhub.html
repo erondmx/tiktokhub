@@ -948,6 +948,85 @@
 
         /* ── FIM CONTROLE DE VENDAS ──────────────────────────────── */
 
+        /* ── MINERAÇÃO ───────────────────────────────────────────── */
+        #mineracao-view {
+            padding: 28px 32px;
+            max-width: 860px;
+            margin: 0 auto;
+            overflow-y: auto;
+            height: 100%;
+        }
+        .min-page-title {
+            font-size: 1.4em; font-weight: 800;
+            color: #2c3e50; margin-bottom: 24px;
+        }
+        body.dark .min-page-title { color: #e2e4f0; }
+        .min-add-btn {
+            background: #8e44ad; color: #fff; border: none;
+            border-radius: 8px; padding: 10px 20px;
+            font-size: 0.92em; font-weight: 700; cursor: pointer;
+            margin-bottom: 24px;
+        }
+        .min-add-btn:hover { background: #7d3c98; }
+        .min-list { display: flex; flex-direction: column; gap: 14px; }
+        .min-card {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 18px 20px;
+            display: flex; flex-direction: column; gap: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,.06);
+        }
+        body.dark .min-card { background: #1e2130; border-color: #2e3350; box-shadow: none; }
+        .min-card-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        .min-inp {
+            flex: 1; min-width: 140px;
+            border: 1px solid #dde3ea; border-radius: 7px;
+            padding: 8px 12px; font-size: 0.88em;
+            font-family: inherit; background: #f7f8fa; color: #2c3e50;
+            outline: none; transition: border-color .2s;
+        }
+        .min-inp:focus { border-color: #8e44ad; background: #fff; }
+        body.dark .min-inp { background: #16202e; border-color: #2e3350; color: #e2e4f0; }
+        body.dark .min-inp:focus { border-color: #8e44ad; background: #1a2540; }
+        .min-inp.link { flex: 2; }
+        .min-textarea {
+            width: 100%; border: 1px solid #dde3ea; border-radius: 7px;
+            padding: 8px 12px; font-size: 0.87em; font-family: inherit;
+            background: #f7f8fa; color: #2c3e50; resize: vertical;
+            min-height: 68px; outline: none; transition: border-color .2s;
+        }
+        .min-textarea:focus { border-color: #8e44ad; background: #fff; }
+        body.dark .min-textarea { background: #16202e; border-color: #2e3350; color: #e2e4f0; }
+        body.dark .min-textarea:focus { border-color: #8e44ad; background: #1a2540; }
+        .min-select {
+            border: 1px solid #dde3ea; border-radius: 7px;
+            padding: 8px 12px; font-size: 0.88em; font-family: inherit;
+            background: #f7f8fa; color: #2c3e50; outline: none; cursor: pointer;
+            transition: border-color .2s;
+        }
+        .min-select:focus { border-color: #8e44ad; }
+        body.dark .min-select { background: #16202e; border-color: #2e3350; color: #e2e4f0; }
+        .min-status-badge {
+            font-size: 0.75em; font-weight: 700; border-radius: 5px;
+            padding: 3px 9px; text-transform: uppercase; letter-spacing: .04em;
+        }
+        .min-status-badge.nao_validado { background: rgba(231,76,60,.12); color: #e74c3c; }
+        .min-status-badge.testar       { background: rgba(243,156,18,.15); color: #e67e22; }
+        .min-status-badge.testado      { background: rgba(39,174,96,.13);  color: #27ae60; }
+        .min-del-btn {
+            background: none; border: 1px solid #e74c3c; color: #e74c3c;
+            border-radius: 7px; padding: 7px 13px; font-size: 0.82em;
+            font-weight: 700; cursor: pointer; white-space: nowrap;
+        }
+        .min-del-btn:hover { background: #e74c3c; color: #fff; }
+        .min-empty {
+            color: #aaa; font-size: 0.92em; text-align: center;
+            padding: 40px 0;
+        }
+        body.dark .min-empty { color: #4a5570; }
+        /* ── FIM MINERAÇÃO ───────────────────────────────────────── */
+
         .modal {
             background: white;
             border-radius: 10px;
@@ -1701,6 +1780,7 @@
     <button class="sidebar-tool-btn" id="btn-limpador-sidebar" onclick="showLimpador()">🧹 Limpador de Metadados</button>
     <button class="sidebar-tool-btn" id="btn-calendario-sidebar" onclick="showCalendario()">📅 Calendário de Postagem</button>
     <button class="sidebar-tool-btn" id="btn-vendas-sidebar" onclick="showVendas()">💰 Controle Financeiro</button>
+    <button class="sidebar-tool-btn" id="btn-mineracao-sidebar" onclick="showMineracao()">🔍 Mineração</button>
     <div class="sidebar-footer">
         <div class="sync-status-bar" id="sync-status-bar">
             <span class="sync-dot" id="sync-dot"></span>
@@ -2148,6 +2228,15 @@
     </div>
 </div>
 
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- MINERAÇÃO                                                  -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div id="mineracao-view" style="display:none">
+    <div class="min-page-title">🔍 Mineração de Produtos</div>
+    <button class="min-add-btn" onclick="minAddItem()">+ Adicionar Produto</button>
+    <div class="min-list" id="min-list"></div>
+</div>
+
 <!-- Modal de Exportação -->
 <div class="modal-overlay" id="export-modal-overlay" onclick="_exportModalOutside(event)" style="display:none">
     <div class="modal export-modal">
@@ -2350,8 +2439,9 @@ async function _doCloudSave() {
         _setSyncStatus('saving');
         const payload = {
             prompts:    data,
-            calendario: (typeof cal_getData === 'function') ? cal_getData() : null,
-            vendas:     (typeof vd_getData  === 'function') ? vd_getData()  : null,
+            calendario: (typeof cal_getData  === 'function') ? cal_getData()  : null,
+            vendas:     (typeof vd_getData   === 'function') ? vd_getData()   : null,
+            mineracao:  (typeof min_getData  === 'function') ? min_getData()  : null,
         };
         await window._fbSave(payload);
         _setSyncStatus('synced');
@@ -2379,6 +2469,10 @@ window._fbReadyPromise.then(async () => {
             if (cloud.vendas && typeof vd_setData === 'function') {
                 vd_setData(cloud.vendas);
                 localStorage.setItem('tiktok-vendas', JSON.stringify(cloud.vendas));
+            }
+            if (cloud.mineracao && typeof min_setData === 'function') {
+                min_setData(cloud.mineracao);
+                localStorage.setItem('tiktok-mineracao', JSON.stringify(cloud.mineracao));
             }
             render();
         } else {
@@ -2672,6 +2766,7 @@ function hideAllPanels() {
     document.getElementById('limpador-view').style.display = 'none';
     document.getElementById('calendario-view').style.display = 'none';
     document.getElementById('vendas-view').style.display = 'none';
+    document.getElementById('mineracao-view').style.display = 'none';
     document.querySelector('.main').classList.remove('main-fullwidth');
     const calcBtn = document.getElementById('btn-calc-sidebar');
     if (calcBtn) calcBtn.classList.remove('active');
@@ -2681,6 +2776,8 @@ function hideAllPanels() {
     if (calBtn2) calBtn2.classList.remove('active');
     const venBtn = document.getElementById('btn-vendas-sidebar');
     if (venBtn) venBtn.classList.remove('active');
+    const minBtn = document.getElementById('btn-mineracao-sidebar');
+    if (minBtn) minBtn.classList.remove('active');
 }
 
 // clicar numa SUB-CATEGORIA
@@ -3169,8 +3266,9 @@ async function writeBackup() {
             const writable = await backupFileHandle.createWritable();
             const payload = {
                 prompts: data,
-                calendario: (typeof cal_getData === 'function') ? cal_getData() : null,
-                vendas: (typeof vd_getData === 'function') ? vd_getData() : null
+                calendario: (typeof cal_getData  === 'function') ? cal_getData()  : null,
+                vendas:     (typeof vd_getData   === 'function') ? vd_getData()   : null,
+                mineracao:  (typeof min_getData  === 'function') ? min_getData()  : null,
             };
             await writable.write(JSON.stringify(payload, null, 2));
             await writable.close();
@@ -3532,9 +3630,10 @@ function _doDownload(payload, filename) {
 function _exportAll() {
     const date = new Date().toISOString().slice(0, 10);
     const payload = {
-        prompts: data,
-        calendario: (typeof cal_getData === 'function') ? cal_getData() : null,
-        vendas: (typeof vd_getData === 'function') ? vd_getData() : null
+        prompts:   data,
+        calendario: (typeof cal_getData  === 'function') ? cal_getData()  : null,
+        vendas:     (typeof vd_getData   === 'function') ? vd_getData()   : null,
+        mineracao:  (typeof min_getData  === 'function') ? min_getData()  : null,
     };
     _doDownload(payload, 'tiktok-hub-backup-' + date + '.json');
 }
@@ -4587,6 +4686,16 @@ function showCalendario() {
     cal_init();
 }
 
+function showMineracao() {
+    hideAllPanels();
+    activePromptId = null;
+    currentCatId = currentSubId = currentPromptId = null;
+    document.getElementById('mineracao-view').style.display = 'block';
+    const btn = document.getElementById('btn-mineracao-sidebar');
+    if (btn) btn.classList.add('active');
+    if (typeof window.minRender === 'function') window.minRender();
+}
+
 function showVendas() {
     hideAllPanels();
     activePromptId = null;
@@ -5193,6 +5302,81 @@ function showVendas() {
     window.vd_getData = () => vdData;
     window.vd_setData = (d) => { vdData = d; };
 
+})();
+
+// ══════════════════════════════════════════════════════════════
+// MINERAÇÃO
+// ══════════════════════════════════════════════════════════════
+(function() {
+    const MIN_KEY = 'tiktok-mineracao';
+    let minData = { items: [] };
+
+    function _load() {
+        try { const d = JSON.parse(localStorage.getItem(MIN_KEY)); if (d && d.items) minData = d; }
+        catch(e) {}
+    }
+    function _save() {
+        localStorage.setItem(MIN_KEY, JSON.stringify(minData));
+        if (typeof _scheduleCloudSave === 'function') _scheduleCloudSave();
+    }
+    function _uid() { return Math.random().toString(36).slice(2, 10); }
+    function _e(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+    function _render() {
+        const list = document.getElementById('min-list');
+        if (!list) return;
+        if (!minData.items.length) {
+            list.innerHTML = '<div class="min-empty">Nenhum produto adicionado ainda.<br>Clique em "+ Adicionar Produto" para começar.</div>';
+            return;
+        }
+        list.innerHTML = minData.items.map((item, idx) => `
+            <div class="min-card">
+                <div class="min-card-row">
+                    <input class="min-inp" placeholder="Nome do produto"
+                        value="${_e(item.name)}"
+                        oninput="minUpdate(${idx},'name',this.value)">
+                    <input class="min-inp link" placeholder="Link do produto (URL)"
+                        value="${_e(item.link)}"
+                        oninput="minUpdate(${idx},'link',this.value)">
+                    <select class="min-select" onchange="minUpdate(${idx},'status',this.value)">
+                        <option value="nao_validado" ${item.status==='nao_validado'?'selected':''}>Não validado</option>
+                        <option value="testar"       ${item.status==='testar'      ?'selected':''}>Testar</option>
+                        <option value="testado"      ${item.status==='testado'     ?'selected':''}>Testado</option>
+                    </select>
+                    <button class="min-del-btn" onclick="minDelete(${idx})">🗑 Excluir</button>
+                </div>
+                <textarea class="min-textarea" placeholder="Observações sobre o produto..."
+                    oninput="minUpdate(${idx},'notes',this.value)">${_e(item.notes)}</textarea>
+            </div>
+        `).join('');
+    }
+
+    function _addItem() {
+        minData.items.unshift({ id: _uid(), name: '', link: '', notes: '', status: 'nao_validado' });
+        _save(); _render();
+        const first = document.querySelector('#min-list .min-inp');
+        if (first) setTimeout(() => first.focus(), 30);
+    }
+
+    function _update(idx, field, value) {
+        if (!minData.items[idx]) return;
+        minData.items[idx][field] = value;
+        _save();
+    }
+
+    function _delete(idx) {
+        minData.items.splice(idx, 1);
+        _save(); _render();
+    }
+
+    _load();
+
+    window.minRender  = _render;
+    window.minAddItem = _addItem;
+    window.minUpdate  = _update;
+    window.minDelete  = _delete;
+    window.min_getData = () => minData;
+    window.min_setData = (d) => { if (d && d.items) { minData = d; localStorage.setItem(MIN_KEY, JSON.stringify(d)); } };
 })();
 </script>
 
