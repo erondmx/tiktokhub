@@ -1019,6 +1019,12 @@
             font-weight: 700; cursor: pointer; white-space: nowrap;
         }
         .min-del-btn:hover { background: #e74c3c; color: #fff; }
+        .min-save-btn {
+            background: #27ae60; color: #fff; border: none;
+            border-radius: 7px; padding: 7px 13px; font-size: 0.82em;
+            font-weight: 700; cursor: pointer; white-space: nowrap;
+        }
+        .min-save-btn:hover { background: #219a52; }
         .min-empty {
             color: #aaa; font-size: 0.92em; text-align: center;
             padding: 40px 0;
@@ -5343,6 +5349,7 @@ function showVendas() {
                         <option value="testar"       ${item.status==='testar'      ?'selected':''}>Testar</option>
                         <option value="testado"      ${item.status==='testado'     ?'selected':''}>Testado</option>
                     </select>
+                    <button class="min-save-btn" onclick="minSave(${idx})">✓ Salvar</button>
                     <button class="min-del-btn" onclick="minDelete(${idx})">🗑 Excluir</button>
                 </div>
                 <textarea class="min-textarea" placeholder="Observações sobre o produto..."
@@ -5371,10 +5378,28 @@ function showVendas() {
 
     _load();
 
+    function _saveItem(idx) {
+        const name = minData.items[idx] && minData.items[idx].name;
+        if (!name || !name.trim()) {
+            alert('Preencha ao menos o nome do produto antes de salvar.');
+            return;
+        }
+        _save();
+        // Feedback visual no botão
+        const btns = document.querySelectorAll('.min-save-btn');
+        if (btns[idx]) {
+            const btn = btns[idx];
+            btn.textContent = '✓ Salvo!';
+            btn.style.background = '#1e8449';
+            setTimeout(() => { btn.textContent = '✓ Salvar'; btn.style.background = ''; }, 1500);
+        }
+    }
+
     window.minRender  = _render;
     window.minAddItem = _addItem;
     window.minUpdate  = _update;
     window.minDelete  = _delete;
+    window.minSave    = _saveItem;
     window.min_getData = () => minData;
     window.min_setData = (d) => { if (d && d.items) { minData = d; localStorage.setItem(MIN_KEY, JSON.stringify(d)); } };
 })();
